@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin: 0;
+            padding: 0;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+        }
+
+        .desc {
+            margin: 0;
+            padding: 0;
+            color: #d3d7de;
+        }
+
+        table {
+            max-width: 480px;
+        }
+
+        .space {
+            height: 16px;
+        }
+
+        .header {
+            color: white;
+            border-radius: 12px 12px 0 0;
+            background-color: #21252c;
+            padding: 16px;
+        }
+
+        .footer {
+            border-radius: 0 0 12px 12px;
+            color: white;
+            background-color: #21252c;
+            padding: 16px;
+        }
+
+        .white {
+            background-color: #f2f2f3;
+        }
+
+        .title {
+            padding: 24px 24px 0 24px;
+        }
+
+        .content {
+            color: #0a0c0f;
+            padding: 16px 12px;
+        }
+
+        .btn {
+            padding: 8px;
+            background-color: #1366ec;
+            border-radius: 8px;
+            font-weight: bold;
+            color: white;
+            text-decoration: none;
+        }
+
+        .color-main {
+            color: #1366ec
+        }
+
+        .color-second {
+            color: #eca413;
+        }
+
+        .second-text {
+            text-align: center;
+            padding: 32px 16px 0 16px;
+            color: #21252c;
+        }
+    </style>
+    {% block style %}
+
+    {% endblock %}
+
+</head>
+
+<body>
+    <table width="100%" cellpadding="0" cellspacing="0" align="center">
+        <tbody>
+            <tr class="space"></tr>
+            <tr>
+                <td class="header" align="center">
+                    <h1>Organis</h1>
+                    <p class="desc">La <strong class="color-main">solution</strong>, pour votre <strong
+                            class="color-second">entreprise</strong>.</p>
+                </td>
+            </tr>
+            <tr class="white">
+                <td class="title" align="center">
+                    {% block title %}{% endblock %}
+                </td>
+            </tr>
+            <tr class="white">
+                <td class="content">
+                    {% block content %}{% endblock %}
+                </td>
+            </tr>
+            <tr class="white" align="center">
+                <td class="content">
+                    {% block usage %}{% endblock %}
+                </td>
+            </tr>
+            <tr class="white">
+                <td class="content">
+                    {% block warning %}{% endblock %}
+                </td>
+            </tr>
+            <tr>
+                <td class="footer" align="center">
+                    <p>Organis &copy; 2025 - Tous droits réservés</p>
+                </td>
+            </tr>
+            <tr class="space"></tr>
+        </tbody>
+    </table>
+</body>
+
+
+</html>
