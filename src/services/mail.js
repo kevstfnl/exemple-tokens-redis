@@ -15,6 +15,7 @@ const transporter = mailer.createTransport({
 
 // * Fonction pour envoie un mail a un utilisateur.
 function sendMail(user, subject, content) {
+    
     // Ici on configure les options du mail en lui meme (information de l'envoyant, mail du receveur, sujet, contenue)
     const mailOptions = {
         from: `"Mission locale d'aubagne" <${MAIL}>`, // Nom de l'envoyant (oui on peut mettre n'importe quoi :p).

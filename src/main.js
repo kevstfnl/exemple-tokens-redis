@@ -4,7 +4,7 @@ require('dotenv').config();
 
 /*
 ! Je vous conseille d'utiliser l'extention VSCode: "Better Comments"
-! pour que les commentaires soit plus """lisible"""
+! pour que les commentaires soit plus """lisibles"""
 
 * Dependances a installer via "npm install":
     - express

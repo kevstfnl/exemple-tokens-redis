@@ -33,7 +33,7 @@ async function getUserById(id) {
 
         // Si l'utilisateur n'est pas dans le cache on essaie dans prisma.
         if (!user) {
-            user = /* await prisma.users.findUnique({mail}) */ {
+            user = /* await prisma.users.findUnique({id}) */ {
                 id: user.id,
                 mail: user.mail,
                 name: user.name,
@@ -45,7 +45,7 @@ async function getUserById(id) {
         }
         return user;
     } catch (err) {
-        throw err;
+        throw {name: "UserNotFound", error: err};
     }
 }
 
@@ -67,18 +67,15 @@ async function getUserByMail(mail) {
         if (user) saveUserInCache(user);
         return user;
     } catch (err) {
-        throw err;
+        throw {name: "UserNotFound", error: err};
     }
 }
 
 // * Sauvegarder/Modifier un utilisateur en base de donnée et dans le cache.
 async function saveUser(user) {
     try {
-        const prismaUser = /* await prisma.users.update() */ {
-            id: 123,
-            mail: "mail@gmail.com",
-            name: "Jhon",
-            verified: true
+        const prismaUser = /* await prisma.users.update(user.id) */ {
+            user
         };
 
         // Si l'utilisateur a été mis a jours dans prisma, on met a jour le cache Redis.

@@ -7,7 +7,7 @@ const userRouter = require("express").Router();
 
 * PARTIE: CREATION DE COMPTE
 
-===========================================================================================================================================
+=========================================================================================================================================== 
 */
 
 // * Route pour la creation de compte utilisateur.
@@ -25,7 +25,7 @@ userRouter.post("/register", async (req, res) => {
             /* 
              * On génère un token temporaire (avec "JsonWebToken"), 
              * il s'agit simplement d'un objet{} chiffré et transformé en chaine de caractères,
-             * on pourra verifier ça validité plus tard. 
+             * on pourra verifier la validité de celui-ci plus tard. 
             */
             const token = jwt.sign(
                 { id: user.id }, // L'objet que l'on souhaite chiffré
@@ -33,21 +33,21 @@ userRouter.post("/register", async (req, res) => {
                 { expiresIn: "15m" } // Options supplémentaires (utile en l'occurence pour le delai avant expiration du token)
             );
 
-            // On envoie un mail à l'utilisateur, dans lequelle il y aura un lien,
-            // qui redirigera vers une route de validation qui contiendra le token.
+            // On envoie un mail à l'utilisateur (voir "services/mail.js"), dans lequelle il y aura un lien,
+            // qui redirigera vers la route de validation qui contiendra le token.
             sendMail(user, "Confirmation d'inscrition", {
-                url: `localhost:3000/register/confirmation/${token}` // Le liens cliquable dans le mail vers la route avec le token
+                url: `localhost:3000/register/confirmation/${token}` // Le liens dans le mail vers la route avec le token
             });
 
             /*
             ? EXPLICATIONS:
                 Pour validé le compte, on aura besoin de son id (pour le recuperer en base de données, ...),
-                cependant, mettre un lien de validation avec l'id en brute (exemple: "localhost:3000/register/confirmation/456")
+                cependant, mettre un lien de validation avec l'id en brute (exemple: 456)
                 est dangereux, car il est facile pour un attaquant, d'essayer de valider un compte avec des ids aléatoires,
-                qui ne serait pas le siens et pourrait posé des problemes a l'avenir.
+                qui ne serait pas le siens et donc pourrait posé des problemes à l'avenir.
 
-                C'est pour cela qu'on chiffre (avec JsonWebToken) l'id afin que le liens reste confidentiel, mais aussi temporaire.
-            */
+                C'est pour cela qu'on chiffre (avec JsonWebToken) l'id afin que le liens reste confidentiel, 
+                mais aussi pour rendre le lien temporaire. */
 
             res.json({ message: "Mail envoyé" });
             return;
@@ -65,24 +65,21 @@ userRouter.get("/register/confirmation/:token", async (req, res) => {
         // On verifie, si le token est valie et si il n'est pas expiré.
         const data = jwt.verify(
             token, // Le token recupéré dans l'url,
-            process.env.MAIL_TOKEN_KEY, // La clef de chiffrement / déchiffrement.
+            process.env.MAIL_TOKEN_KEY, // La clef secrète de chiffrement / déchiffrement.
         );
         const id = data.id; // On recupère l'id dans le token (car le token stoque un objet, il faut faire attention au noms).
-        const user = await getUserById(id); // On cherche l'utilisateur dans la base de données via sont id.
+        const user = await getUserById(id); // On cherche l'utilisateur dans la base de données via l'id.
 
         // Si l'utilisateur à été trouvé et qu'il n'avais pas encore vérifié sont compte.
         if (user && !user.verified) {
-            // On valide la verification et on le sauvegarde en base de données
-            user.verified = true;
-            await saveUser(user);
 
-            // On redirige l'utilisateur vers la page login.
+            // On valide la verification du compte et on sauvegarde le changement en base de données
+            await saveUser({ id: user.id, verified: true});
             res.json({ message: "Compte vérifié" });
             return;
         }
         throw { message: "Utilisateur introuvable ou deja vérifié" };
     } catch (err) {
-        // On redirige à l'accueil.
         res.status(500).json({ message: err.message });
     }
 });
@@ -103,28 +100,30 @@ userRouter.post("/login", async (req, res) => {
     // ! Verifications (regex, ect...)
 
     try {
-        const user = await getUserByMail(mail); // On recherche l'utilisateur en base de données via sont email.
+        const user = await getUserByMail(mail); // On recherche l'utilisateur en base de données via l'email.
 
         // ! Verification du mot de passe avec bcrypt
 
+        // On verifie si le compte est vérifié
         if (!user.verified) throw { message: "Vous n'avez pas validé votre email" };
 
-        // ! Setup authguard (validation d'authentication)
-        // On créer un token d'access qui servira à verifier dans le authguard si l'utilisateur est connecté (voir "middlewares/authguard.js").
+        /*
+        ! Mise en place de l'authguard (verification de l'authentication de l'utilisateur)
+        On créer un token d'access qui servira à verifier dans le authguard si l'utilisateur est connecté (voir "middlewares/authguard.js"). */
         const accessToken = jwt.sign(
             { id: user.id }, // On y stoque l'id de l'utilisateur
-            process.env.ACCESS_TOKEN_KEY, // La clef de chiffrement / dechiffrement
-            { expiresIn: "15m" } // Durée de validité
+            process.env.ACCESS_TOKEN_KEY, // La clef secrète de chiffrement / dechiffrement
+            { expiresIn: "15m" } // Durée de validitée
         );
 
-        // On créer un token de rafraichissement qui servira à regenerer un token d'acces quand il aura expiré.
+        // On créer un token de rafraichissement qui servira à regenerer un token d'acces quand la session aura expiré.
         const refreshToken = jwt.sign(
             { id: user.id }, // On y stoque l'id de l'utilisateur
             process.env.REFRESH_TOKEN_KEY, // La clef de chiffrement / dechiffrement
             // On peut ou non mettre une expiration (plus longue)
         );
 
-        // On envoie les tokens a l'utilisateurs
+        // On envoie les tokens a l'utilisateurs.
         res.json({
             accessToken,
             refreshToken
@@ -132,15 +131,23 @@ userRouter.post("/login", async (req, res) => {
         return;
 
         /*
-        ! Côté frontend, il faudra inclure, l'access token dans header "authorization: Bearer {token}"
-        ! et dans le cas où il a coché la case resté connecté, stoquer le refreshToken dans un cookie,
-        ! sinon stoquer le refreshToken dans la session (pour que l'utilisateur ne soit pas deconnecté pendant ça session)
+        ? EXPLICATIONS:
+            Pour vérifier que l'utilisateur est bien connecté (voir "middlewares/authguard.js"),
+            dans l'authguard, nous allons vérifier que le token "accessToken" est valide,
+            celui-ci n'est valable que 15 minute (modifiable), pour renforcer la sécurité.
+            ! (Côté frontend, il faudra inclure, l'access token dans header "authorization: Bearer {token}");
+
+            Dans le cas où le token est invalide ou a expiré,
+            côté frontend, il faudra utilisé le "refreshToken" (à envoyer via la route "/refresh" en bas de la page)
+            afin de générer un nouveau "accessToken" valide.
+
+            Ce "refreshToken" toujours côté frontend ne devra pas etre stoqué au meme endroit que l'access token.
+            (Il est normalement stoqué dans les cookies avec une expiration si l'utilisateur n'a pas coché la case "Restée connecté")
         */
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
-
 
 /* 
 ===========================================================================================================================================
